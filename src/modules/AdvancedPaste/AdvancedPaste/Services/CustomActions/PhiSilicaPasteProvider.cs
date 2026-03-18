@@ -23,6 +23,7 @@ public sealed class PhiSilicaPasteProvider : IPasteAIProvider
     public static PasteAIProviderRegistration Registration { get; } = new(SupportedTypes, config => new PhiSilicaPasteProvider(config));
 
     private static readonly SemaphoreSlim _initLock = new(1, 1);
+
     private static PhiSilicaLanguageModel _cachedModel;
 
     private readonly PasteAIConfig _config;
@@ -39,6 +40,7 @@ public sealed class PhiSilicaPasteProvider : IPasteAIProvider
 
         try
         {
+            EnsureLafUnlocked();
             var readyState = PhiSilicaLanguageModel.GetReadyState();
             return Task.FromResult(readyState != AIFeatureReadyState.NotSupportedOnCurrentSystem);
         }
@@ -132,6 +134,8 @@ public sealed class PhiSilicaPasteProvider : IPasteAIProvider
                 return _cachedModel;
             }
 
+            EnsureLafUnlocked();
+
             var readyState = PhiSilicaLanguageModel.GetReadyState();
 
             if (readyState == AIFeatureReadyState.NotSupportedOnCurrentSystem)
@@ -162,4 +166,6 @@ public sealed class PhiSilicaPasteProvider : IPasteAIProvider
             _initLock.Release();
         }
     }
+
+    private static void EnsureLafUnlocked() => PhiSilicaLafHelper.EnsureUnlocked();
 }
